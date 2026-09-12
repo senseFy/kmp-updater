@@ -28,9 +28,9 @@ Update `VERSION` and `CHANGELOG.md`, commit, then push a matching `v<version>` t
 
 ## Maven Central
 
-The same library publications are configured with [Vanniktech Maven Publish](https://vanniktech.github.io/gradle-maven-publish-plugin/central/). Initial account setup is pending: sign into the [Central Portal](https://central.sonatype.com/) as the owner of `senseFy`, verify `io.github.sensefy`, and create a publishing token.
+The same library publications use [Vanniktech Maven Publish](https://vanniktech.github.io/gradle-maven-publish-plugin/central/). The `io.github.sensefy` namespace is verified under the `senseFy` GitHub account, and CI publishing credentials are configured.
 
-Add these GitHub repository secrets:
+Maintain these GitHub repository secrets:
 
 | Secret | Value |
 | --- | --- |
@@ -39,11 +39,25 @@ Add these GitHub repository secrets:
 | `MAVEN_SIGNING_KEY` | ASCII-armored OpenPGP private signing key |
 | `MAVEN_SIGNING_PASSWORD` | Signing key passphrase, if set |
 
-Keep a recoverable copy of the signing key and publish its public key to a Central-supported keyserver. These OpenPGP keys sign SDK artifacts; applications use separate Ed25519 keys for update feeds and Developer ID identities for macOS bundles.
+Renew the [Central publishing token](https://central.sonatype.com/usertoken) before it expires and update both Central secrets. Keep a recoverable copy of the signing key and publish its public key to a Central-supported keyserver. These OpenPGP keys sign SDK artifacts; applications use separate Ed25519 keys for update feeds and Developer ID identities for macOS bundles.
 
 The current Maven signing fingerprint is `20F0998AF482B862EA206A20F303AD422D396F24`. Its [public key](https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xF303AD422D396F24) is available from the Ubuntu keyserver.
 
-Run the **Maven Central** workflow with an existing, verified release tag. It checks the version, signs every library publication and invokes `publishAndReleaseToMavenCentral`. After the artifacts are visible on Central, simplify the README's repository instructions to `mavenCentral()`.
+Run the **Maven Central** workflow with an existing, verified release tag. It checks the version, signs every library publication and invokes `publishAndReleaseToMavenCentral`:
+
+```sh
+gh workflow run maven-central.yml -f tag="v$(cat VERSION)"
+```
+
+The workflow waits up to 60 minutes for all seven publications to appear in the public repository. If synchronization times out, inspect the existing deployment in Central before attempting another upload.
+
+Once Central serves the release, verify it from the matching checkout:
+
+```sh
+python3 scripts/verify-release.py --central
+```
+
+This runs the same external JVM/Native consumer against Maven Central. Its reports go to `build/central-verification/`, separately from archive verification.
 
 ## Contributing
 

@@ -18,7 +18,7 @@ concurrency:
 jobs:
   publish:
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - name: Require an existing GitHub release
         env:
@@ -53,3 +53,35 @@ jobs:
           : "${ORG_GRADLE_PROJECT_mavenCentralPassword:?Configure MAVEN_CENTRAL_PASSWORD}"
           : "${ORG_GRADLE_PROJECT_signingInMemoryKey:?Configure MAVEN_SIGNING_KEY}"
           ./gradlew -PsignAllPublications=true publishAndReleaseToMavenCentral --console=plain
+      - name: Wait for public Maven Central artifacts
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import runpy
+          import time
+          import urllib.error
+          import urllib.request
+
+          modules = runpy.run_path("scripts/verify-release.py")["MODULES"]
+          version = Path("VERSION").read_text().strip()
+          pending = set(modules)
+          deadline = time.monotonic() + 60 * 60
+          while pending and time.monotonic() < deadline:
+              for module in sorted(pending):
+                  url = f"https://repo.maven.apache.org/maven2/io/github/sensefy/{module}/{version}/{module}-{version}.module"
+                  try:
+                      with urllib.request.urlopen(url, timeout=10) as response:
+                          if response.status == 200:
+                              pending.remove(module)
+                  except urllib.error.HTTPError as error:
+                      if error.code != 404 and error.code < 500:
+                          raise
+                  except (urllib.error.URLError, TimeoutError):
+                      pass
+              if pending:
+                  print(f"Waiting for Central synchronization: {', '.join(sorted(pending))}", flush=True)
+                  time.sleep(15)
+          if pending:
+              raise SystemExit("Central synchronization is still pending; check the existing deployment before retrying publication")
+          print(f"All {len(modules)} Maven publications are publicly available")
+          PY
