@@ -17,6 +17,27 @@ Set `JAVA_HOME` to the full JDK before running the harness. It builds the publis
 
 For interactive verification, run `python3 scripts/acceptance-macos.py --manual`. Use **Check updates → Download → Install & relaunch** in the window. The harness verifies the same result and closes its test app. See [Updater Lab](../samples/updater-lab/README.md).
 
+## Developer ID and notarized app acceptance
+
+Use an existing Developer ID Application identity and a `notarytool` Keychain profile:
+
+```sh
+python3 scripts/acceptance-notarized-macos.py \
+  --identity 'Developer ID Application: Your Name (TEAMID1234)' \
+  --team-id TEAMID1234 \
+  --notary-profile your-notary-profile
+```
+
+The script builds two isolated Updater Lab releases with the production helper. It signs nested native code, including libraries inside dependency JARs, then signs the JVM runtime and app bundles. Apple notarizes both apps and the update DMG; tickets are stapled and checked with Gatekeeper before testing the upgrade.
+
+Four scenarios exercise the production configuration: normal upgrade, altered feed signature, wrong application scope and an incorrect artifact digest. They reuse the real HTTPS/Ed25519 harness and verify process replacement, startup confirmation and preserved application data. Fault injection remains in the separate ad-hoc suite.
+
+Reports, Apple submission IDs and signed assets stay under `build/notarized-acceptance/<run>/`. If notarization is still pending or the network interrupts the run, repeat the command with `--resume <run>` to reuse its submissions. Use a fresh run after changing app contents or signing configuration. The script uses the named Keychain profile directly; no certificate or credential is exported into the project.
+
+**Passed on 2026-09-12, macOS ARM64:** both app releases and the update DMG received Apple acceptance, stapled tickets validated, and all four production-helper scenarios passed. The successful upgrade booted release 2 in a different process, confirmed installation, removed the old bundle and preserved app data. Report: `build/notarized-acceptance/20260912-213856-eb33c8/report.json`.
+
+The first submission caught an unsigned native library inside a Compose dependency JAR. The signing pass now includes those entries and updates their companion SHA-256 resources before sealing the containing app. Apple accepted the corrected submission.
+
 ## Logic and native acceptance
 
 | Area | Assertions |
@@ -83,7 +104,6 @@ Earlier acceptance also verified the publisher CLI signature independently with 
 
 ## Next acceptance milestones
 
-- An old-to-new **Developer ID signed and notarized** app upgrade, including publisher identity and Gatekeeper acceptance.
 - Supported macOS versions and both architectures with actual release packages; multiple app instances, real disk exhaustion, read-only installations and modified signed staging content.
 
 Current recovery checks cover atomic exchange and abrupt helper termination. Power-loss behavior and application-data migration need their own acceptance scenarios. Platform expansion is tracked in the [architecture](architecture.md#platform-integration).

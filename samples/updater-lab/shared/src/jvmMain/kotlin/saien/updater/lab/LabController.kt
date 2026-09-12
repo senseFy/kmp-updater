@@ -65,12 +65,15 @@ class LabController(private val application: Path?) : AutoCloseable {
             record("boot", "pid=${ProcessHandle.current().pid()}")
             val network = HttpsUpdateTransport(data.resolve("downloads"), setOf("localhost"))
             transport = network
+            val developerTeam = properties.getProperty("developerTeam")
+            val helperName =
+                if (developerTeam == null) "kmp-updater-fixture-helper" else "kmp-updater-helper"
             installer =
                 MacOsInstaller(
                     application,
-                    application.resolve("Contents/Helpers/kmp-updater-fixture-helper"),
+                    application.resolve("Contents/Helpers/$helperName"),
                     "saien.updater.lab",
-                    "FIXTURE000",
+                    developerTeam ?: "FIXTURE000",
                     release,
                     data.resolve("requests"),
                 )

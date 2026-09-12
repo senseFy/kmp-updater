@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add Developer ID signed and Apple-notarized Updater Lab acceptance using the production helper. Four scenarios pass on macOS ARM64, alongside the existing eight ad-hoc scenarios.
+- Include native libraries inside dependency JARs in the sample's signing pass.
+
 ## 0.1.0-alpha.1
 
 First macOS/JVM preview of KMP Updater.

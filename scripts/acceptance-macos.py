@@ -203,7 +203,7 @@ def check_production_gate(root, app):
     require(result.returncode != 0 and "restricted" in result.stdout, "Fixture executable escaped its directory restriction")
 
 
-def exercise(case, stamp, public, urls, trust_store, manual=False):
+def exercise(case, stamp, public, urls, trust_store, manual=False, developer_team=None):
     root = OUTPUT / "runs" / f"{stamp}-{case}"
     root.mkdir(parents=True)
     (root / ".updater-lab-fixture").write_text("kmp-updater-acceptance-v1\n")
@@ -213,8 +213,13 @@ def exercise(case, stamp, public, urls, trust_store, manual=False):
     write_json(root / "scenario.json", {"fault": case})
     properties = dict(feed=urls[case], publicKey=public, trustStore=str(trust_store), sentinel=sentinel,
                       automate=str(not manual).lower(), vetoExit=str(case == "exit-timeout").lower())
+    if developer_team is not None:
+        require(case in ("success", "bad-signature", "wrong-scope", "bad-artifact"),
+                "Fault injection belongs to the separate ad-hoc fixture helper")
+        properties["developerTeam"] = developer_team
     (root / "lab.properties").write_text("".join(f"{key}={value}\n" for key, value in properties.items()))
-    check_production_gate(root, app)
+    if developer_team is None:
+        check_production_gate(root, app)
     executable = app / "Contents/MacOS/Updater Lab"
     with (root / "console.log").open("w") as output:
         process = subprocess.Popen([str(executable)], stdout=output, stderr=subprocess.STDOUT, env=ENV)

@@ -1,5 +1,7 @@
 # Updater Lab
 
+For a Developer ID signed and Apple-notarized run using the production helper, see [formal macOS acceptance](../../docs/verification.md#developer-id-and-notarized-app-acceptance).
+
 A minimal, independent Compose Multiplatform app for exercising KMP Updater. It displays the installed release, update status and session events, with explicit check, download and install actions. There is no dependency on Enjoy.
 
 ## Run a real upgrade

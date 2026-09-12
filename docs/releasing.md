@@ -41,6 +41,8 @@ Add these GitHub repository secrets:
 
 Keep a recoverable copy of the signing key and publish its public key to a Central-supported keyserver. These OpenPGP keys sign SDK artifacts; applications use separate Ed25519 keys for update feeds and Developer ID identities for macOS bundles.
 
+The current Maven signing fingerprint is `20F0998AF482B862EA206A20F303AD422D396F24`. Its [public key](https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xF303AD422D396F24) is available from the Ubuntu keyserver.
+
 Run the **Maven Central** workflow with an existing, verified release tag. It checks the version, signs every library publication and invokes `publishAndReleaseToMavenCentral`. After the artifacts are visible on Central, simplify the README's repository instructions to `mavenCentral()`.
 
 ## Contributing

@@ -2,7 +2,7 @@
 
 A Kotlin Multiplatform updater with signed release feeds, verified downloads and a small UI-independent API. Inspired by Sparkle, with a shared update engine and platform-specific installation.
 
-**Early preview, `0.1.0-alpha.1`.** The first release focuses on macOS/JVM. Try a complete local upgrade with [Updater Lab](samples/updater-lab/README.md); signed/notarized distribution acceptance is the next milestone.
+**Early preview, `0.1.0-alpha.1`.** The first release focuses on macOS/JVM. Developer ID signed and Apple-notarized app upgrades have passed on ARM64. Try a complete isolated upgrade with [Updater Lab](samples/updater-lab/README.md).
 
 ## Install
 
@@ -40,7 +40,7 @@ Use JDK 21 and Kotlin 2.4.0 or newer. GitHub Releases also provides the publishe
 
 | Platform | Current support |
 | --- | --- |
-| macOS / JVM, directly distributed apps | DMG download, verification, installation and relaunch; local app acceptance passed on ARM64 |
+| macOS / JVM, directly distributed apps | DMG download, verification, installation and relaunch; ad-hoc and Developer ID/notarized app acceptance passed on ARM64 |
 | Windows / Linux | Shared core and JVM services; installers are not implemented yet |
 | Android / iOS | Future adapters for platform-managed updates; not included in the first release |
 
@@ -127,6 +127,8 @@ Close `transport` when the updater's application-level owner is disposed. Drive 
 2. Embed `KMPUpdaterRelease` as a decimal **string** in the app's `Info.plist`. It must equal the signed manifest's release sequence, including in the currently installed application. `CFBundleVersion` and display version remain separate.
 3. Sign and notarize the distribution. A DMG must contain exactly one top-level `.app`. The helper verifies its bundle ID, Developer ID publisher, embedded release and Gatekeeper assessment before staging with `ditto`.
 4. Run from a writable, canonical installed `.app` path. Read-only disk images, privilege elevation, custom `NSUpdateSecurityPolicy` and sandboxed hosts are unsupported.
+
+For Compose/JVM apps, include native libraries inside dependency JARs in the signing pass. The [notarized Updater Lab acceptance](docs/verification.md#developer-id-and-notarized-app-acceptance) demonstrates nested signing, notarization and an actual old-to-new upgrade.
 
 The helper exchanges complete app bundles atomically on the same volume and retains the old bundle until confirmation. If preparation is interrupted, keep its staging directory for inspection. Use the [transaction recovery flow](docs/architecture.md#installation-contract) to inspect the installed version and clean up safely.
 
