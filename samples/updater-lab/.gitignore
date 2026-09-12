@@ -1,0 +1,39 @@
+.gradle/
+.kotlin/
+.idea/
+**/build/
+local.properties
+
+# Local configuration and signing material
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.mobileprovision
+key.properties
+keystore.properties
+signing.properties
+
+# Android
+*.apk
+*.aab
+captures/
+
+# Apple and Xcode
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.ipa
+*.dSYM
+
+# Desktop packages
+*.dmg
+*.msi
+*.exe
+
+# Operating systems
+.DS_Store
+Thumbs.db

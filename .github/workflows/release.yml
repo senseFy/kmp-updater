@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+
+  package:
+    needs: verify
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Check version
+        run: test "$GITHUB_REF_NAME" = "v$(cat VERSION)"
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: corretto
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@4733eaac7c1b0da527e4206b7671e0061de1ce37 # v6
+        with:
+          cache-provider: basic
+      - name: Package libraries, publisher and production helper
+        run: python3 scripts/package-release.py
+      - name: Consume published artifacts outside the checkout
+        run: python3 scripts/verify-release.py "build/release/kmp-updater-$(cat VERSION)-maven.zip"
+      - name: Exercise eight real app upgrade scenarios
+        run: python3 scripts/acceptance-macos.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-assets
+          path: build/release/*
+          if-no-files-found: error
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: release-verification
+          # Acceptance assets contain ephemeral private keys. Upload reports only.
+          path: |
+            build/release-verification/
+            build/acceptance/report-*.json
+            samples/updater-lab/shared/build/reports/lab-ui.png
+
+  publish:
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-assets
+          path: release-assets
+      - name: Publish verified preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd release-assets && sha256sum --check SHA256SUMS)
+          gh release create "$GITHUB_REF_NAME" release-assets/* \
+            --verify-tag --prerelease --title "KMP Updater $GITHUB_REF_NAME" \
+            --notes-file CHANGELOG.md

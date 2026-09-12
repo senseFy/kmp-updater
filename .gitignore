@@ -1,0 +1,8 @@
+.gradle/
+.kotlin/
+**/build/
+.build/
+.DS_Store
+local.properties
+*.private-key
+__pycache__/

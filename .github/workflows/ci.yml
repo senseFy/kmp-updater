@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  jvm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: corretto
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@4733eaac7c1b0da527e4206b7671e0061de1ce37 # v6
+        with:
+          cache-provider: basic
+      - name: Verify JVM and formatting
+        run: ./gradlew verify --console=plain
+      - name: Check release scripts
+        run: python3 -m py_compile scripts/*.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: jvm-test-results
+          path: '**/build/test-results/**/*.xml'
+
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: corretto
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@4733eaac7c1b0da527e4206b7671e0061de1ce37 # v6
+        with:
+          cache-provider: basic
+      - name: Verify Native and helper
+        run: |
+          ./gradlew :updater-core:macosArm64Test --console=plain
+          swift test --package-path native/macos
+          xcrun swift-format lint --strict -r native/macos/Sources native/macos/Tests native/macos/Package.swift
+      - name: Verify Compose sample
+        working-directory: samples/updater-lab
+        run: ./gradlew :shared:jvmTest --console=plain
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: macos-test-results
+          path: |
+            **/build/test-results/**/*.xml
+            samples/updater-lab/shared/build/reports/lab-ui.png
