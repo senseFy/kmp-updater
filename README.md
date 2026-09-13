@@ -6,14 +6,11 @@ A Kotlin Multiplatform updater with signed release feeds, verified downloads and
 
 ## Install
 
-Download `kmp-updater-0.1.0-alpha.1-maven.zip` from [GitHub Releases](https://github.com/senseFy/kmp-updater/releases) and extract it into `vendor/kmp-updater/` in your project. The archive is a complete Maven repository, including Kotlin Multiplatform metadata and Native libraries. No GitHub token is needed.
-
-In `settings.gradle.kts`, add the extracted repository alongside Maven Central:
+The SDK is available from Maven Central. In `settings.gradle.kts`:
 
 ```kotlin
 dependencyResolutionManagement {
     repositories {
-        maven { url = uri("vendor/kmp-updater/repository") }
         mavenCentral()
     }
 }
@@ -34,7 +31,7 @@ kotlin {
 }
 ```
 
-Use JDK 21 and Kotlin 2.4.0 or newer. GitHub Releases also provides the publisher CLI, a universal macOS helper, and `SHA256SUMS`. Embed and sign the helper as described [below](#macos-packaging-contract). Maven Central publishing is configured but not yet active; use the release archive for this preview.
+Use JDK 21 and Kotlin 2.4.0 or newer. [GitHub Releases](https://github.com/senseFy/kmp-updater/releases) provides the publisher CLI, a universal macOS helper, a complete Maven repository ZIP, and `SHA256SUMS`. Embed and sign the helper as described [below](#macos-packaging-contract).
 
 ## Platforms
 
